@@ -31,6 +31,7 @@ export default function VendorDashboard() {
         background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)',
         padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
+        <div className="vendor-header-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, background: 'var(--accent)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, boxShadow: '0 0 16px var(--accent-glow)' }}>💳</div>
           <span style={{ fontSize: 18, fontWeight: 800, background: 'linear-gradient(135deg, #f0f4ff, var(--accent-hover))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>PayTrack</span>
@@ -45,10 +46,11 @@ export default function VendorDashboard() {
           </div>
           <button className="btn btn-secondary btn-sm" onClick={handleLogout}>Logout →</button>
         </div>
+        </div>
       </div>
 
       {/* Content */}
-      <div style={{ padding: '32px', maxWidth: 900, margin: '0 auto' }}>
+      <div className="vendor-content-wrap" style={{ padding: '32px', maxWidth: 900, margin: '0 auto' }}>
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>👋 Hello, {user?.name?.split(' ')[0]}</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Here are your payment notifications from PayTrack.</p>
