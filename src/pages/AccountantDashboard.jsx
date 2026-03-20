@@ -173,23 +173,47 @@ function UploadPanel() {
   );
 }
 
+// ── Pagination component ─────────────────────────────────────────────────────
+function Pagination({ page, total, pageSize, onPageChange }) {
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return null;
+  return (
+    <div className="pagination">
+      <button className="btn btn-secondary btn-sm" onClick={() => onPageChange(page - 1)} disabled={page === 1}>← Prev</button>
+      <span className="pagination-info">Page {page} of {totalPages} · {total} records</span>
+      <button className="btn btn-secondary btn-sm" onClick={() => onPageChange(page + 1)} disabled={page === totalPages}>Next →</button>
+    </div>
+  );
+}
+
 export default function AccountantDashboard() {
+  const PAGE_SIZE = 10;
+
   const [tab, setTab] = useState('approved');
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [approved, setApproved] = useState([]);
+  const [paid, setPaid]         = useState([]);
+  const [loading, setLoading]   = useState(true);
   const [payModal, setPayModal] = useState(null);
+
+  // ── Pagination state — separate per tab ──
+  const [approvedPage,  setApprovedPage]  = useState(1);
+  const [paidPage,      setPaidPage]      = useState(1);
+  const [approvedTotal, setApprovedTotal] = useState(0);
+  const [paidTotal,     setPaidTotal]     = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [approvedRes, paidRes] = await Promise.all([
-        getPayments({ status: 'Approved' }),
-        getPayments({ status: 'Paid' })
+        getPayments({ status: 'Approved', page: approvedPage, limit: PAGE_SIZE }),
+        getPayments({ status: 'Paid',     page: paidPage,     limit: PAGE_SIZE }),
       ]);
-      const all = [...approvedRes.data.data, ...paidRes.data.data];
-      setPayments(all);
+      setApproved(approvedRes.data.data);
+      setApprovedTotal(approvedRes.data.total ?? approvedRes.data.data.length);
+      setPaid(paidRes.data.data);
+      setPaidTotal(paidRes.data.total ?? paidRes.data.data.length);
     } finally { setLoading(false); }
-  }, []);
+  }, [approvedPage, paidPage]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -198,9 +222,6 @@ export default function AccountantDashboard() {
     try { await notifyVendor(id); load(); }
     catch (er) { alert(er.response?.data?.error); }
   };
-
-  const approved = payments.filter(p => p.status === 'Approved');
-  const paid = payments.filter(p => p.status === 'Paid');
 
   const navItems = [
     { label: 'To-Do (Approved)', icon: '✅', active: tab === 'approved', onClick: () => setTab('approved') },
@@ -252,18 +273,18 @@ export default function AccountantDashboard() {
         <div className="stat-grid">
           <div className="stat-card">
             <div className="stat-icon" style={{ background: 'var(--info-light)' }}>🔔</div>
-            <div className="stat-value">{approved.length}</div>
+            <div className="stat-value">{approvedTotal}</div>
             <div className="stat-label">Awaiting Payment</div>
           </div>
           <div className="stat-card">
             <div className="stat-icon" style={{ background: 'var(--success-light)' }}>💸</div>
-            <div className="stat-value">{paid.length}</div>
+            <div className="stat-value">{paidTotal}</div>
             <div className="stat-label">Payments Made</div>
           </div>
           <div className="stat-card">
             <div className="stat-icon" style={{ background: 'var(--warning-light)' }}>📢</div>
             <div className="stat-value">{paid.filter(p => !p.vendor_notified).length}</div>
-            <div className="stat-label">Pending Notifications</div>
+            <div className="stat-label">Pending Notifications (this page)</div>
           </div>
         </div>
 
@@ -272,6 +293,7 @@ export default function AccountantDashboard() {
             <div className="page-title">Approved Payments — Ready to Pay</div>
           </div>
           <PayTable data={approved} showNotify={true} />
+          <Pagination page={approvedPage} total={approvedTotal} pageSize={PAGE_SIZE} onPageChange={setApprovedPage} />
         </>}
 
         {tab === 'paid' && <>
@@ -279,6 +301,7 @@ export default function AccountantDashboard() {
             <div className="page-title">Payment History</div>
           </div>
           <PayTable data={paid} showNotify={false} />
+          <Pagination page={paidPage} total={paidTotal} pageSize={PAGE_SIZE} onPageChange={setPaidPage} />
         </>}
 
         {tab === 'upload' && <>

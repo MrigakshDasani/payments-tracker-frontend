@@ -157,7 +157,22 @@ function UploadPanel() {
   );
 }
 
+// ── Pagination component ─────────────────────────────────────────────────────
+function Pagination({ page, total, pageSize, onPageChange }) {
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return null;
+  return (
+    <div className="pagination">
+      <button className="btn btn-secondary btn-sm" onClick={() => onPageChange(page - 1)} disabled={page === 1}>← Prev</button>
+      <span className="pagination-info">Page {page} of {totalPages} · {total} records</span>
+      <button className="btn btn-secondary btn-sm" onClick={() => onPageChange(page + 1)} disabled={page === totalPages}>Next →</button>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
+  const PAGE_SIZE = 10;
+
   const [tab, setTab] = useState('overview');
   const [pos, setPOs] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -171,34 +186,55 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState('');
   const [roleModal, setRoleModal] = useState(null);
 
+  // ── Pagination state ──
+  const [poPage,    setPoPage]    = useState(1);
+  const [payPage,   setPayPage]   = useState(1);
+  const [userPage,  setUserPage]  = useState(1);
+  const [poTotal,   setPoTotal]   = useState(0);
+  const [payTotal,  setPayTotal]  = useState(0);
+  const [userTotal, setUserTotal] = useState(0);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => { setPayPage(1); }, [statusFilter]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [poRes, payRes, usersRes] = await Promise.all([
-        getPOs(),
-        getPayments(statusFilter ? { status: statusFilter } : {}),
-        getUsers()
+        getPOs({ page: poPage, limit: PAGE_SIZE }),
+        getPayments({
+          ...(statusFilter ? { status: statusFilter } : {}),
+          page: payPage,
+          limit: PAGE_SIZE,
+        }),
+        getUsers({ page: userPage, limit: PAGE_SIZE }),
       ]);
       setPOs(poRes.data.data);
+      setPoTotal(poRes.data.total ?? poRes.data.data.length);
+
       setPayments(payRes.data.data);
+      setPayTotal(payRes.data.total ?? payRes.data.data.length);
+
       setUsers(usersRes.data.data || []);
+      setUserTotal(usersRes.data.total ?? (usersRes.data.data || []).length);
     } catch (err) {
       console.error('Load error:', err);
       try {
-        const poRes = await getPOs();
+        const poRes = await getPOs({ page: poPage, limit: PAGE_SIZE });
         setPOs(poRes.data.data);
+        setPoTotal(poRes.data.total ?? poRes.data.data.length);
       } catch {}
     } finally { setLoading(false); }
-  }, [statusFilter]);
+  }, [statusFilter, poPage, payPage, userPage]);
 
   useEffect(() => { load(); }, [load]);
 
   const stats = {
-    totalPOs: pos.length,
-    totalPayments: payments.length,
-    pending: payments.filter(p => p.status === 'Pending').length,
+    totalPOs:     poTotal,
+    totalPayments: payTotal,
+    pending:  payments.filter(p => p.status === 'Pending').length,
     approved: payments.filter(p => p.status === 'Approved').length,
-    paid: payments.filter(p => p.status === 'Paid').length,
+    paid:     payments.filter(p => p.status === 'Paid').length,
     totalValue: payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0),
   };
 
@@ -351,6 +387,7 @@ export default function AdminDashboard() {
                 </table>
               </div>
             </div>
+            <Pagination page={poPage} total={poTotal} pageSize={PAGE_SIZE} onPageChange={setPoPage} />
           </>
         )}
 
@@ -396,6 +433,7 @@ export default function AdminDashboard() {
                 </table>
               </div>
             </div>
+            <Pagination page={payPage} total={payTotal} pageSize={PAGE_SIZE} onPageChange={setPayPage} />
           </>
         )}
 
@@ -443,6 +481,7 @@ export default function AdminDashboard() {
                     </table>
                   </div>}
             </div>
+            <Pagination page={userPage} total={userTotal} pageSize={PAGE_SIZE} onPageChange={setUserPage} />
           </>
         )}
       </>}
