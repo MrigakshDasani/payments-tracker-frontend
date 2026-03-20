@@ -14,10 +14,19 @@ export default function Layout({ title, navItems, children }) {
 
   const handleNavClick = (item) => {
     item.onClick();
-    setSidebarOpen(false); // close sidebar on mobile after nav
+    setSidebarOpen(false);
   };
 
   const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+
+  // Role-based avatar colour
+  const roleColors = {
+    admin:      '#6366f1',
+    accountant: '#06b6d4',
+    user:       '#818cf8',
+    vendor:     '#f59e0b',
+  };
+  const avatarColor = roleColors[user?.role] || '#6366f1';
 
   return (
     <div className="app-shell">
@@ -28,7 +37,7 @@ export default function Layout({ title, navItems, children }) {
             <div className="sidebar-logo-icon">💳</div>
             <span className="sidebar-logo-text">PayTrack</span>
           </div>
-          {/* Hamburger — visible only on mobile via CSS */}
+          {/* Hamburger — shown on mobile via CSS */}
           <button
             className="sidebar-hamburger"
             style={{ display: 'none' }}
@@ -53,12 +62,15 @@ export default function Layout({ title, navItems, children }) {
           ))}
         </div>
 
+        {/* Sidebar footer — user info card, no logout click */}
         <div className={`sidebar-footer${sidebarOpen ? ' open' : ''}`}>
-          <div className="sidebar-user" onClick={handleLogout} title="Click to logout">
-            <div className="sidebar-avatar">{initials}</div>
+          <div className="sidebar-user-card">
+            <div className="sidebar-user-avatar" style={{ background: avatarColor }}>
+              {initials}
+            </div>
             <div className="sidebar-user-info">
-              <div className="sidebar-user-name">{user?.name}</div>
-              <div className="sidebar-user-role">{user?.role} · logout →</div>
+              <div className="sidebar-user-name">{user?.name?.split(' ')[0]}</div>
+              <div className="sidebar-user-role">{user?.role}</div>
             </div>
           </div>
         </div>
@@ -69,7 +81,22 @@ export default function Layout({ title, navItems, children }) {
         <div className="topbar">
           <h1 className="topbar-title">{title}</h1>
           <div className="topbar-actions">
-            <span className={`badge badge-${user?.role}`}>{user?.role}</span>
+            {/* Logout icon button — top right */}
+            <button
+              className="topbar-logout-btn"
+              onClick={handleLogout}
+              title="Logout"
+              aria-label="Logout"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" strokeWidth="2.2"
+                strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              <span className="topbar-logout-label">Logout</span>
+            </button>
           </div>
         </div>
         <div className="page-content">{children}</div>

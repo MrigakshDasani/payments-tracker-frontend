@@ -68,7 +68,7 @@ function UploadPanel() {
   };
 
   return (
-    <div style={{ maxWidth: 580 }}>
+    <div className="upload-panel-wrap" style={{ maxWidth: 580 }}>
       {/* Download template */}
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>

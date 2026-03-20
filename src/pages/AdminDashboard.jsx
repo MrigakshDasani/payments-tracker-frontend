@@ -278,7 +278,7 @@ export default function AdminDashboard() {
                 <div className="stat-value">{stats.paid}</div>
                 <div className="stat-label">Paid Out</div>
               </div>
-              <div className="stat-card" style={{ gridColumn: 'span 2' }}>
+              <div className="stat-card stat-card-wide">
                 <div className="stat-icon" style={{ background: 'rgba(251,191,36,0.12)' }}>💰</div>
                 <div className="stat-value" style={{ fontSize: 20 }}>{fmt(stats.totalValue)}</div>
                 <div className="stat-label">Total Payment Value</div>
