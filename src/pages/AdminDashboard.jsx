@@ -194,29 +194,58 @@ export default function AdminDashboard() {
   const [payTotal,  setPayTotal]  = useState(0);
   const [userTotal, setUserTotal] = useState(0);
 
-  // Reset to page 1 when filter changes
+  // ── Accurate stat totals (across all pages, not just current page) ──
+  const [pendingCount,  setPendingCount]  = useState(0);
+  const [approvedCount, setApprovedCount] = useState(0);
+  const [paidCount,     setPaidCount]     = useState(0);
+  const [totalValue,    setTotalValue]    = useState(0);
+
+  // Reset page 1 when filter changes
   useEffect(() => { setPayPage(1); }, [statusFilter]);
+
+  // ✅ Reset user page to 1 when switching to users tab
+  useEffect(() => { setUserPage(1); }, [tab]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [poRes, payRes, usersRes] = await Promise.all([
+      const [poRes, payRes, usersRes, pendRes, apprRes, paidRes] = await Promise.all([
         getPOs({ page: poPage, limit: PAGE_SIZE }),
         getPayments({
           ...(statusFilter ? { status: statusFilter } : {}),
           page: payPage,
           limit: PAGE_SIZE,
         }),
+        // ✅ Always pass page + limit so backend paginates correctly
         getUsers({ page: userPage, limit: PAGE_SIZE }),
+        // ✅ Fetch counts for each status separately so stats are accurate across all pages
+        getPayments({ status: 'Pending',  page: 1, limit: 1 }),
+        getPayments({ status: 'Approved', page: 1, limit: 1 }),
+        getPayments({ status: 'Paid',     page: 1, limit: 1 }),
       ]);
+
       setPOs(poRes.data.data);
       setPoTotal(poRes.data.total ?? poRes.data.data.length);
 
       setPayments(payRes.data.data);
       setPayTotal(payRes.data.total ?? payRes.data.data.length);
 
+      // ✅ Correctly read paginated user list
       setUsers(usersRes.data.data || []);
       setUserTotal(usersRes.data.total ?? (usersRes.data.data || []).length);
+
+      // ✅ Accurate counts from total field, not from filtered page array
+      setPendingCount(pendRes.data.total  ?? 0);
+      setApprovedCount(apprRes.data.total ?? 0);
+      setPaidCount(paidRes.data.total     ?? 0);
+
+      // Total value: sum across all payments in the current (possibly filtered) view
+      // If your API returns a totalValue field use that, otherwise sum current page as approximation
+      setTotalValue(
+        payRes.data.totalValue ??
+        payRes.data.data.reduce((s, p) => s + parseFloat(p.amount || 0), 0)
+      );
+
     } catch (err) {
       console.error('Load error:', err);
       try {
@@ -229,13 +258,14 @@ export default function AdminDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
+  // ✅ Use separate stat state vars — not derived from current page's payments array
   const stats = {
-    totalPOs:     poTotal,
+    totalPOs:      poTotal,
     totalPayments: payTotal,
-    pending:  payments.filter(p => p.status === 'Pending').length,
-    approved: payments.filter(p => p.status === 'Approved').length,
-    paid:     payments.filter(p => p.status === 'Paid').length,
-    totalValue: payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0),
+    pending:       pendingCount,
+    approved:      approvedCount,
+    paid:          paidCount,
+    totalValue,
   };
 
   const handleCreatePO = async (e) => {
@@ -481,6 +511,7 @@ export default function AdminDashboard() {
                     </table>
                   </div>}
             </div>
+            {/* ✅ User pagination now wired correctly */}
             <Pagination page={userPage} total={userTotal} pageSize={PAGE_SIZE} onPageChange={setUserPage} />
           </>
         )}

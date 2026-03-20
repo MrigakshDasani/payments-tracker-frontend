@@ -25,11 +25,11 @@ api.interceptors.response.use(
 export const login = (data) => api.post('/auth/login', data);
 export const register = (data) => api.post('/auth/register', data);
 export const getMe = () => api.get('/auth/me');
-export const getUsers = () => api.get('/auth/users');
+export const getUsers = (params) => api.get('/auth/users', { params });
 export const updateUserRole = (id, role) => api.patch(`/auth/role/${id}`, { role });
 
 // PURCHASE ORDERS
-export const getPOs = () => api.get('/purchase-orders');
+export const getPOs = (params) => api.get('/purchase-orders', { params })
 export const getPO = (id) => api.get(`/purchase-orders/${id}`);
 export const createPO = (data) => api.post('/purchase-orders', data);
 export const updatePO = (id, data) => api.put(`/purchase-orders/${id}`, data);
